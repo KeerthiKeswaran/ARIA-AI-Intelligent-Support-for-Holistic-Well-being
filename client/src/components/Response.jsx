@@ -1,16 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './Response.css';
 import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Response = () => {
+    const navigate = useNavigate();
     const [nearbyPlaces, setNearbyPlaces] = useState([]);
     const [weather, setWeather] = useState(null);
     const [airQuality, setAirQuality] = useState(null);
     const [map, setMap] = useState(null);
     const location = useLocation();
     const { lat, lon } = location.state;
+    const [llmResponse, setLlmResponse] = useState("");
+    const [typedResponse, setTypedResponse] = useState("");
+    const [typingIndex, setTypingIndex] = useState(0);
+    const [envState, setEnvState] = useState(false);
+    const [llmSuggestion, setSuggestion] = useState(false);
+    const hasExecuted = useRef(false);
+    let done = false;
+    const typingSpeed = 3;
 
     const geoapifyApiKey = 'a2c649229ea54800bdd6f0ef98e10122';
 
@@ -24,6 +35,7 @@ const Response = () => {
                 throw new Error('Network response was not ok ' + response.statusText);
             }
             const data = await response.json();
+            console.log('Nearby API Response:', data.features)
             setNearbyPlaces(data.features);
         } catch (error) {
             console.error("Error fetching nearby healthcare:", error);
@@ -54,13 +66,96 @@ const Response = () => {
             if (!response.ok) {
                 throw new Error('Network response was not ok ' + response.statusText);
             }
-            const data = await response.json();
-            console.log('Air Quality API Response:', data.hourly);
-            setAirQuality(data);
+            const airData = await response.json();
+            setAirQuality(airData);
         } catch (error) {
             console.error("Error fetching air quality data:", error);
         }
     };
+
+    const preprocessText = (text) => {
+        let formattedText = String(text)
+        let responseArray = formattedText.split("**");
+        let newResponse = "";
+        for (let i = 0; i < responseArray.length; i++) {
+            if (i === 0 || i % 2 !== 1) {
+                newResponse += responseArray[i];
+            } else {
+                newResponse += "<b>" + responseArray[i] + "</b>";
+            }
+        }
+        let pattern = /\*/g;
+        let replacement = "</br><b>•</b> "; // Replacement string
+        let newResponse2 = newResponse.replace(pattern, replacement);
+        pattern = /(\r?\n\s*){2,}/g;
+        replacement = "</br> ";
+        newResponse2 = newResponse2.replace(pattern, replacement);
+        pattern = /- <b>/g;
+        replacement = "</br> - <b> ";
+        newResponse2 = newResponse2.replace(pattern, replacement);
+        return newResponse2;
+    };
+
+    const handleResponse = async () => {
+        if (llmSuggestion && done) return;
+
+        const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm10,pm2_5`;
+        const response = await fetch(url);
+        const airData = await response.json();
+        const particularMatter2_5 = airData.hourly.pm2_5[0];
+        const particularMatter10 = airData.hourly.pm10[0];
+
+        const url2 = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunset,sunrise,weathercode&timezone=auto`;
+        const response2 = await fetch(url2);
+        const weatherRes = await response2.json();
+        const temperature_2m_max = weatherRes.daily.temperature_2m_max[0];
+        const temperature_2m_min = weatherRes.daily.temperature_2m_min[0];
+        const placeNames = [];
+        nearbyPlaces.forEach(place => {
+            placeNames.push(place.properties.name);
+        })
+        const nearbyPlacesData = placeNames.join(' ');
+        const airQualityData = String(particularMatter2_5) + String(particularMatter10);
+        const weatherData = String(temperature_2m_max) + String(temperature_2m_min)
+        console.log("Placename : ", typeof (nearbyPlacesData));
+        try {
+            if (!llmSuggestion && !done) {
+                const response = await axios.post("http://127.0.0.1:8000/suggestion",
+                    {
+                        nearbyPlacesData: nearbyPlacesData,
+                        airQualityData: airQualityData,
+                        weatherData: weatherData
+                    }, {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" }
+                });
+                const text = preprocessText(response.data.results);
+                setLlmResponse(text);
+                setTypedResponse("");
+                setTypingIndex(0);
+                setEnvState(true);
+                setSuggestion(true);
+                done = true;
+            }
+        } catch (error) {
+            const text = "An error occurred while generating suggestions. Meanwhile, please interpret the available data until the issue is resolved.";
+            console.error("Error fetching LLM response", error);
+        }
+    }
+
+    const handleNavigation = () => {
+        navigate('/questionnaire');
+    }
+
+    useEffect(() => {
+        if (weather && airQuality && nearbyPlaces && typingIndex < llmResponse.length) {
+            const typingTimeout = setTimeout(() => {
+                setTypedResponse((prev) => prev + llmResponse[typingIndex]);
+                setTypingIndex((prev) => prev + 1);
+            }, typingSpeed);
+            return () => clearTimeout(typingTimeout);
+        }
+    }, [typingIndex, llmResponse, weather, airQuality, nearbyPlaces]);
 
     useEffect(() => {
         const initialMap = L.map('map', {
@@ -77,8 +172,9 @@ const Response = () => {
         L.circle([lat, lon], {
             color: 'blue',
             fillColor: '#03fcb2',
-            fillOpacity: 0.5,
-            radius: 1000, 
+            fillOpacity: 0.2,
+            radius: 4000,
+            weight: 1
         }).addTo(initialMap);
 
         setMap(initialMap);
@@ -89,11 +185,20 @@ const Response = () => {
     }, [lat, lon]);
 
     useEffect(() => {
-        fetchNearbyHealthcare();
-        fetchWeatherData();
-        fetchAirQualityData();
+        if (!llmSuggestion && !done) 
+        {
+            fetchNearbyHealthcare();
+            fetchWeatherData();
+            fetchAirQualityData();
+        }
     }, [lat, lon]);
-
+    useEffect(() => {
+        if (!hasExecuted.current) {
+            handleResponse();
+            console.log('This runs only once');
+            hasExecuted.current = true; 
+        }
+    }, []);
     useEffect(() => {
         if (map && nearbyPlaces.length) {
 
@@ -156,6 +261,30 @@ const Response = () => {
                     </div>
                 ) : <div></div>}
             </div>
+            
+            <div className="card p-3" style={{ textAlign: 'left' }}>
+                <h3 style={{ color: '#4a148c', fontWeight: '600', marginBottom: '10px' , fontSize: '20px'}}>
+                    ARIA's Environment Analysis
+                </h3>
+                <div style={{
+                    color: '#888999',
+                    backgroundColor: 'black',
+                    borderRadius: '5px',
+                    padding: '10px',
+                    textAlign: 'left'
+                }}>
+                    {envState ? (
+                        <div style={{
+                            color: envState ? "white" : "#888999",
+                            whiteSpace: 'pre-wrap',
+                            fontSize: '17px'
+                        }}
+                            dangerouslySetInnerHTML={{ __html: typedResponse }}>
+                        </div>
+                    ) : "Your Environment Analysis will be resulted here"}
+                </div>
+            </div>
+            {envState? (<button onClick={()=>handleNavigation()}>Go to the next page</button>): (<div></div>)}
         </div>
     );
 };

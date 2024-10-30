@@ -17,7 +17,7 @@ body {
     flex-direction: column; 
     justify-content: center; 
     position: relative;
-    left: 50%;
+    left: 60%;
 }
 
 .input-container {
@@ -33,7 +33,7 @@ input[type="text"] {
     box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-button {
+.locButton {
     padding: 10px 15px;
     width: 300px;
     margin-left: 150px;

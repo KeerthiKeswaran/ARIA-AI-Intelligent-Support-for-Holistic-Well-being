@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Questionnaire.css';
 
 const Questionnaire = () => {
   const [progress, setProgress] = useState(0);
+  const navigate = useNavigate();
   const [answers, setAnswers] = useState({
     workEnvironment: '',
     stressLevel: '',
@@ -12,6 +14,9 @@ const Questionnaire = () => {
     diet: ''
   });
 
+  const handleNavigation = () => {
+    navigate('/dashboard');
+  }
   const handleAnswerChange = (question, answer) => {
     setAnswers((prevAnswers) => ({
       ...prevAnswers,
@@ -25,7 +30,7 @@ const Questionnaire = () => {
     <div className="questionnaire">
       <h1>Personalize Your Health Journey!</h1>
       <p>A quick questionnaire to tailor your health assistant experience based on your unique lifestyle and work environment.</p>
-      
+
 
       {/* Question 1 */}
       <div className="question">
@@ -108,6 +113,7 @@ const Questionnaire = () => {
           <p>Your responses will help us provide personalized health recommendations.</p>
         </div>
       )}
+      <button onClick={() => handleNavigation()}>Go to the Dashboard</button>
     </div>
   );
 };

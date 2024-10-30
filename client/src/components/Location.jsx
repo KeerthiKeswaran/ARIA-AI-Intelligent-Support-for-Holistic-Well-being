@@ -65,7 +65,7 @@ const Location = () => {
     return (
         <div className="location-container">
             <h2>User Location</h2>
-            <button onClick={handleLocationFetch}>Get My Location</button>
+            <button className='locButton' onClick={handleLocationFetch}>Get My Location</button>
             <div className="input-container">
                 {error ? (
                     <input
