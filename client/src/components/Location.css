@@ -1,23 +1,21 @@
 body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(to right, #d9d9d9, #f4e0d5, #eccff3);
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(to right, #E0F2F1, #c6d8f4);
 }
 
 .location-container {
     margin: 0 auto; 
-    max-width: 600px; 
-    height: 90vh;
+    max-width: 900px; 
+    height: 100vh;
     padding: 20px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
-    color: #333;
+    background: linear-gradient(135deg, #E0F2F1, #d4b2f2); 
+    color: #4A4A4A;
     box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.543);
     text-align: center; 
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
-    position: relative;
-    left: 60%;
 }
 
 .input-container {
@@ -29,29 +27,30 @@ input[type="text"] {
     max-width: 500px; 
     padding: 10px;
     border-radius: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid #D1D5DB;
     box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .locButton {
     padding: 10px 15px;
     width: 300px;
-    margin-left: 150px;
+    margin-left: 280px;
+    margin-top: 20px;
     margin-right: 150px;
     border-radius: 5px;
     border: none;
-    background-color: #7e57c2;
+    background-color: #7E57C2; 
     color: white;
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
 button:hover {
-    background-color: #5e35b1;
+    background-color: #5E35B1; 
 }
 
 .error-message {
-    color: red;
+    color: #EF4444; 
     margin-top: 10px;
 }
 
@@ -69,21 +68,21 @@ button:hover {
     transition: transform 0.5s ease-in-out; 
 }
 
-.analyseButton
-{
+.analyseButton {
     padding: 10px 15px;
     width: 300px;
-    margin-left: 150px;
+    margin-top: 20px;
+    margin-left: 280px;
     margin-right: 150px;
     border-radius: 5px;
     border: none;
-    background-color: #7e57c2;
+    background-color: #7E57C2;
     color: white;
     cursor: pointer;
     transition: background-color 0.3s;   
     transition: transform 0.5s ease-in-out; 
 }
-.analyseButton:hover {
-    background-color: #5e35b1;
-}
 
+.analyseButton:hover {
+    background-color: #5E35B1; 
+}
