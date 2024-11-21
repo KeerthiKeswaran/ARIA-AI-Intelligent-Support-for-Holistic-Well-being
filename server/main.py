@@ -42,7 +42,6 @@ async def signup(user: SignIn):
 async def login(user: loginIn):
     print(user.userMailId)
     db_user = users_collection.find_one({"userMailId": user.userMailId})
-    print(db_user)
     if not db_user: 
         raise HTTPException(status_code=400, detail="User not exist please Sign Up")
     if db_user['password'] != user.password: 
