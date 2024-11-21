@@ -18,8 +18,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-client = MongoClient("mongodb+srv://Keerthi29:KeerthiMongo22@ariacluster.vbcz9.mongodb.net/?retryWrites=true&w=majority")
+client = MongoClient("mongodb+srv://Keerthi29:KeerthiMongo22@cluster0.vbcz9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+#client = MongoClient("mongodb+srv://Keerthi29:KeerthiMongo22@ariacluster.vbcz9.mongodb.net/?retryWrites=true&w=majority")
 db = client['ariaDatabase']  
 users_collection = db['ariaUser']
 print("Initialized MongoDB!")
@@ -35,6 +35,7 @@ async def signup(user: SignIn):
         raise HTTPException(status_code=400, detail="Email already registered")
     user_data = user.dict()
     users_collection.insert_one(user_data)
+    print("Completed Creation")
     return {"message": "User created successfully"}
 
 @app.post("/login")
